@@ -94,3 +94,102 @@ public class GeneticAlgorithm {
                 chromosome = chromosome + (char)(random.nextInt(95) + 32);  // ASCII 32-126 for password characters
             }
             population.add(chromosome);
+        }
+        return population;
+    }
+
+    public static double fitness(String chromosome){
+        // The fitness value of the chromosome is the number of characters different from the password.
+        // So, a chromosome with a low fitness value is closer to our password because it has more character similarities.
+
+        int characterDifference = 0;
+        for(int i = 0; i < chromosome.length(); i++){
+            if(chromosome.charAt(i) != TARGET_PASSWORD.charAt(i)){    // comparing characters
+                characterDifference++;
+            }
+        }
+        return characterDifference;  // returns the number of characters different from our password for the given chromosome
+    }
+
+    public static String[] crossover(String chromosome1, String chromosome2){
+        // Performs crossover between the string values held by the given two chromosomes.
+
+        Random random = new Random();
+        String[] newChromosomes = new String[2];  // two new chromosomes will be generated for the lower generation
+
+        if(random.nextDouble() < CROSSOVER_PROBABILITY){ // crossover occurs
+            int crossoverIndex = random.nextInt(chromosome1.length());  // where to crossover is randomly determined
+            // the beginning of the first chromosome and the end of the second chromosome are concatenated.
+            newChromosomes[0] = chromosome1.substring(0, crossoverIndex) + chromosome2.substring(crossoverIndex);
+
+            // the beginning of the second chromosome and the end of the first chromosome are concatenated.
+            newChromosomes[1] = chromosome2.substring(0, crossoverIndex) + chromosome1.substring(crossoverIndex);
+        }
+        else{ // if no crossover occurs
+            newChromosomes[0] = chromosome1;
+            newChromosomes[1] = chromosome2;
+        }
+        return newChromosomes;
+    }
+
+    public static String mutation(String chromosome){
+        // Since the mutation probability is very low, there is a chance for each gene. For each gene,
+        // a random value is assigned if there is to be a mutation,
+        // and if there is no mutation, the value at the relevant index in the gene remains unchanged.
+
+        Random random = new Random();
+        String newChromosome = "";
+        for(int i = 0; i < chromosome.length(); i++){
+
+            if(random.nextDouble() < MUTATION_PROBABILITY){
+                newChromosome = newChromosome + (char)(random.nextInt(95) + 32);
+            }
+            else{
+                newChromosome += chromosome.charAt(i);
+            }
+        }
+        return newChromosome;
+    }
+
+    public static void sortPopulation(ArrayList<String> population){
+        // We are sorting using the SELECTION SORT algorithm. It sorts the given population arraylist
+        // (which holds chromosomes as string type) by fitness values (in ascending order).
+        // So, the chromosome with the lowest fitness value, i.e., closest to our password, is found at the first index.
+
+        for (int i = 0; i < population.size() - 1; i++) {
+            int minIndex = i;
+            for (int j = i + 1; j < population.size(); j++) {
+                if (fitness(population.get(j)) < fitness(population.get(minIndex))) {
+                    minIndex = j;
+                }
+            }
+            if (minIndex != i) {
+                String temp = population.get(i);
+                population.set(i, population.get(minIndex));
+                population.set(minIndex, temp);
+            }
+        }
+    }
+
+    static String selection(ArrayList<String> population) {
+        Random random = new Random();
+
+        double totalFitness = 0;
+        for (String chromosome : population) {
+            totalFitness += 1 / fitness(chromosome);  // adding the inverses of fitness values to increase the selection chance of chromosomes with low fitness values (closest to our password)
+        }
+
+        double spin = random.nextDouble() * totalFitness;  // spinning the wheel
+
+        // Find the chromosome corresponding to the turn value
+        double partialSum = 0;
+        for (int i = 0; i < population.size(); i++) {
+            partialSum += 1 / fitness(population.get(i));
+            if (spin < partialSum) {
+                return population.get(i);
+            }
+        }
+        // to prevent errors
+        return population.get(population.size() - 1);
+    }
+}
